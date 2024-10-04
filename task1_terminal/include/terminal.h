@@ -21,8 +21,8 @@
 		    exit(EXIT_FAILURE);			\
 	    }
 
-static const size_t maxArgsCount = 100;
-static const int cmdLineSize  = 1000;
+#define maxArgsCount 100
+#define cmdLineSize  1000
 
 void run_cmd ();
 void process (char* cmd, int inFd);
