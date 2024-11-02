@@ -12,7 +12,7 @@
 #include "utils.h"
 #include "shmem.h"
 
-const key_t SHMEM_ID = 150;
+const key_t SHMEM_ID = 888;
 
 int main ()
 {

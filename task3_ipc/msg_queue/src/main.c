@@ -4,16 +4,24 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <time.h>
 
 #include "utils.h"
 #include "msg_queue.h"
 
-const key_t MSG_ID = 150;
+const key_t MSG_ID = 888;
 
 int main ()
 {
+    int msg_d = msgget (MSG_ID, IPC_CREAT | 0666);
+    if (msg_d == -1)
+    {
+        perror ("msgget error ");
+        return 1;
+    }
+
     pid_t pid = fork ();
     if (pid == -1)
     {
@@ -26,20 +34,10 @@ int main ()
         buf buffer = {};
         buf_ctor (&buffer, BUFFER_CAPACITY);
 
-        int msg_d = msgget (MSG_ID, IPC_CREAT | 0666);
-        if (msg_d == -1)
-        {
-            perror ("parent msgget error ");
-            return 1;
-        }
-
-        printf ("MSG_D: %d\n", msg_d);
-
-        msg send_buf = {.mtype = MSG_TYPE,
-                       .mtext = {}};
+        struct msgbuf send_buf;
+        send_buf.mtype = MSG_TYPE;
 
         int input_d = protected_input_file_open (INPUT_FILENAME);
-        if (input_d == -1) return 1;
 
         int msg_size = 0;
         while (msg_size = read_from_file (&buffer, input_d))
@@ -55,26 +53,28 @@ int main ()
             {
                 memcpy (send_buf.mtext, buffer.buf + pos, MESSAGE_CAPACITY);
 
-                pos += MESSAGE_CAPACITY;
-
-                if (msgsnd (msg_d, (void*)&send_buf, MESSAGE_CAPACITY, 0))
+                if (msgsnd (msg_d, &send_buf, MESSAGE_CAPACITY, 0))
                 {
-                    perror ("msgsnd error ");
+                    printf ("%d\n", errno);
+                    perror ("1 msgsnd error ");
                     return 1;
                 }
+
+                pos += MESSAGE_CAPACITY;
             }
 
             memcpy (send_buf.mtext, buffer.buf + pos, buffer.size - pos);
-            if (msgsnd (msg_d, (void*)&send_buf, buffer.size - pos, 0))
+            if (msgsnd (msg_d, &send_buf, buffer.size - pos, 0))
             {
-                perror ("msgsnd error ");
+                printf ("%d\n", errno);
+                perror ("2 msgsnd error ");
                 return 1;
             }
         }
 
-        if (msgsnd (msg_d, (void *) &send_buf, 0, 0))
+        if (msgsnd (msg_d, &send_buf, 0, 0))
         {
-            perror("msgsnd error ");
+            perror ("msgsnd error ");
             return 1;
         }
 
@@ -86,16 +86,7 @@ int main ()
     }
     else
     {
-        int msg_d = msgget (MSG_ID, 0666);
-        if (msg_d == -1)
-        {
-            perror ("child msgget error ");
-            return 1;
-        }
-
-        printf ("MSG_D: %d\n", msg_d);
-
-        msg read_buf = {};
+        struct msgbuf read_buf = {};
 
         int output_d = protected_output_file_open (OUTPUT_FILENAME);
         if (output_d == -1) return 1;

@@ -56,7 +56,7 @@ int write_to_file (const buf* buffer, int fd)
 
 int protected_output_file_open (const char* filename)
 {
-    int fd = open (filename, O_CREAT | O_WRONLY, S_IRWXU);
+    int fd = open (filename, O_CREAT | O_WRONLY, 0644);
     if (fd == -1) perror ("open output error\n");
 
     return fd;
