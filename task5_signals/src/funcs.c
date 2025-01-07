@@ -36,7 +36,7 @@ int receive_info()
     act.sa_flags = SA_SIGINFO;
     act.sa_sigaction = handler;
 
-    if (sigaction(1, &act, NULL))
+    if (sigaction(SIGRTMIN, &act, NULL))
     {
         perror("sigaction");
         return -1;
@@ -89,7 +89,7 @@ int write_info (const char* filename, pid_t pid)
     {
         info.sival_int = buffer[i];
         sem_wait(write_sem);
-        if(sigqueue(pid, 1, info))
+        if(sigqueue(pid, SIGRTMIN, info))
         {
             perror("sigqueue");
             return -1;
